@@ -6,29 +6,44 @@ analysis plots.
 """
 
 import pandas as pd
+
+import scienceplots
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 from utils.constants import METRICS, Events
 
 
+# TODO: Fix this, it is not working properly
+# plt.style.use(["science", "nature"])
+# plt.rcParams.update(
+#     {
+#         "font.size": 12,
+#         "xtick.labelsize": 12,
+#         "ytick.labelsize": 12,
+#         "axes.labelsize": 12,
+#         "legend.fontsize": 12,
+#     }
+# )
+
+
 def read_metrics_file(
     event: str, date: str, station: str, window_size: int
 ) -> pd.DataFrame:
     """Read a pre-calculated metrics file for visualization.
-    
+
     Loads the CSV file containing calculated metrics for a specific event,
     date, and station combination.
-    
+
     Args:
         event: The type of event (e.g., 'ForbushDecrease', 'GroundLevelEnhancement').
         date: The date in 'YYYY-MM-DD' format.
         station: The station identifier.
         window_size: The window size used for metrics calculation.
-        
+
     Returns:
         A DataFrame containing the metrics data with datetime index.
-        
+
     Raises:
         FileNotFoundError: If the metrics file does not exist.
         pandas.errors.EmptyDataError: If the file is empty or corrupted.
@@ -47,20 +62,20 @@ def plot(
     colors: dict[str, str] = None,
 ) -> None:
     """Create a line plot of metrics over time.
-    
+
     Plots selected metrics as time series using seaborn lineplot with
     customizable styling and date formatting.
-    
+
     Args:
         df: DataFrame containing metrics data with 'datetime', 'metric', and 'value' columns.
         ax: Matplotlib axes object to plot on.
         metrics: List of metric names to plot. Use ["*"] to plot all metrics.
         freq_date_range: Frequency string for x-axis tick spacing (e.g., '2h', '30min').
         colors: Dictionary mapping metric names to colors. If None, uses default seaborn palette.
-        
+
     Side Effects:
         Modifies the provided axes object by adding the plot, grid, legend, and formatting.
-        
+
     Note:
         The function expects the DataFrame to have 'datetime', 'metric', and 'value' columns
         in long format for seaborn compatibility.
@@ -100,52 +115,69 @@ def plot(
 
 
 def plot_metrics(
-    event: Events,
-    date: str,
-    station: str,
+    *,
     window_size: int,
     relevant_metrics: list[str],
-    min_datetime: str,
-    max_datetime: str,
+    df: pd.DataFrame = None,
+    event: Events = "Forbush Decrease",
+    date: str = "",
+    station: str = "",
+    min_datetime: str = "",
+    max_datetime: str = "",
     delta: float = 0.2,
     freq_date_range_1: str = "2h",
     freq_date_range_2: str = "30min",
     save_format: str = "pdf",
+    suffix: str = "",
 ) -> None:
     """Create comprehensive metric plots for neutron monitor data analysis.
-    
+
     Generates a two-panel plot showing: (1) all metrics over the entire time series,
     and (2) selected relevant metrics over a specified time window with enhanced detail.
-    
+
     Args:
+        window_size: Window size used for metric calculations.
+        relevant_metrics: List of metric names to highlight in the detailed view.
+        df: Optional DataFrame containing pre-calculated metrics. If None, reads from file.
         event: Type of cosmic ray event being analyzed.
         date: Date of the event in 'YYYY-MM-DD' format.
         station: Station identifier for the neutron monitor.
-        window_size: Window size used for metric calculations.
-        relevant_metrics: List of metric names to highlight in the detailed view.
         min_datetime: Start datetime for the detailed view in ISO format.
         max_datetime: End datetime for the detailed view in ISO format.
         delta: Padding for y-axis limits in the detailed view.
         freq_date_range_1: Frequency for x-axis ticks in the overview plot.
         freq_date_range_2: Frequency for x-axis ticks in the detailed plot.
         save_format: File format for saving the plot ('pdf', 'png', etc.).
-        
+        suffix: Optional suffix for the saved plot filename.
+
     Side Effects:
         - Displays the plot using plt.show()
         - Saves the plot to ./data/{event}/{date}/{station}_metrics-windowsize_{window_size}.{format}
-        
+
     Raises:
         FileNotFoundError: If the metrics file cannot be found.
         ValueError: If datetime strings cannot be parsed.
-        
+
     Note:
         The function expects metrics files to be in the standard format created
         by the calc_metrics function.
     """
-    df = read_metrics_file(event.replace(" ", ""), date, station, window_size)
+    if df is None:
+        df = read_metrics_file(event.replace(" ", ""), date, station, window_size)
+
+    # Just in case the datetime is not parsed correctly
     df["datetime_i"] = pd.to_datetime(df["datetime_i"])
 
-    metrics_columns = list(filter(lambda x: x in METRICS.keys(), df.columns))
+    if not min_datetime:
+        min_datetime = df["datetime_i"].min()
+
+    if not max_datetime:
+        max_datetime = df["datetime_i"].max()
+
+    if "*" not in relevant_metrics:
+        metrics_columns = list(filter(lambda x: x in METRICS.keys(), df.columns))
+    else:
+        metrics_columns = list(df.columns)
 
     data = {"datetime": [], "metric": [], "value": [], "window_shape": []}
     for _, row in df.iterrows():
@@ -198,12 +230,14 @@ def plot_metrics(
     )
 
     fig.suptitle(
-        f"Metrics for {station.upper()} Station - {event} - Window Size {window_size} units (minutes)",
+        f"Metrics for {station.upper()} Station - {event}"
+        + f"- Window Size {window_size} units (minutes)",
         fontsize=16,
     )
 
     fig.tight_layout()
     plt.savefig(
-        f"./data/{event.replace(' ', '')}/{date}/{station.lower()}_metrics-windowsize_{window_size}.{save_format}"
+        f"./data/{event.replace(' ', '')}/{date}/{station.lower()}"
+        + f"_metrics-windowsize_{window_size}{(f'-{suffix}') if suffix else ''}.{save_format}"
     )
     plt.show()
