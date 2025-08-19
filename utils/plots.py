@@ -7,24 +7,24 @@ analysis plots.
 
 import pandas as pd
 
-import scienceplots
+import scienceplots  # noqa: F401
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 from utils.constants import METRICS, Events
 
 
-# TODO: Fix this, it is not working properly
-# plt.style.use(["science", "nature"])
-# plt.rcParams.update(
-#     {
-#         "font.size": 12,
-#         "xtick.labelsize": 12,
-#         "ytick.labelsize": 12,
-#         "axes.labelsize": 12,
-#         "legend.fontsize": 12,
-#     }
-# )
+# LaTeX must be installed previously for this to work
+plt.style.use(["science", "nature"])
+plt.rcParams.update(
+    {
+        "font.size": 12,
+        "xtick.labelsize": 12,
+        "ytick.labelsize": 12,
+        "axes.labelsize": 12,
+        "legend.fontsize": 12,
+    }
+)
 
 
 def read_metrics_file(
