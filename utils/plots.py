@@ -201,11 +201,7 @@ def plot_metrics(
     if not max_datetime:
         max_datetime = df["datetime"].max()
 
-    if "*" not in relevant_metrics:
-        metrics_columns = list(filter(lambda x: x in METRICS.keys(), df.columns))
-    else:
-        metrics_columns = list(df.columns)
-
+    metrics_columns = list(filter(lambda x: x in METRICS.keys(), df.columns))
     data = {"datetime": [], "metric": [], "value": [], "window_shape": []}
     for _, row in df.iterrows():
         for metric in metrics_columns:
