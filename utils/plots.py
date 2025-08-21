@@ -152,7 +152,7 @@ def plot_metrics(
 
     Side Effects:
         - Displays the plot using plt.show()
-        - Saves the plot to ./data/{event}/{date}/{station}_metrics-windowsize_{window_size}.{format}
+        - Saves the plot to ./figures/{event}/{date}/{station}_metrics-windowsize_{window_size}.{format}
 
     Raises:
         FileNotFoundError: If the metrics file cannot be found.
@@ -237,7 +237,7 @@ def plot_metrics(
 
     fig.tight_layout()
     plt.savefig(
-        f"./data/{event.replace(' ', '')}/{date}/{station.lower()}"
+        f"./figures/{event.replace(' ', '')}/{date}/{station.lower()}"
         + f"_metrics-windowsize_{window_size}{(f'-{suffix}') if suffix else ''}.{save_format}"
     )
     plt.show()
