@@ -4,6 +4,7 @@ This module provides functions to calculate various metrics on neutron monitor
 data using rolling windows and statistical measures.
 """
 
+import warnings
 import pandas as pd
 from utils.constants import WINDOW_SIZE, METRICS
 
@@ -47,27 +48,30 @@ def calc_metrics(df: pd.DataFrame, station: str, date: str) -> pd.DataFrame:
         **{metric: [] for metric in METRICS},
     }
 
-    for i, window in enumerate(station_rolling):
-        if window.empty:
-            continue
+    with warnings.catch_warnings(record=True) as _:
+        warnings.simplefilter("always")
 
-        data = window[station].dropna().to_numpy()
-        metric_data["datetime"].append(df_station.index[i])
-        metric_data["value"].append(df_station.iloc[i, 0])
-        metric_data["window_shape"].append(data.shape[0])
-
-        for metric, details in METRICS.items():
-            try:
-                result = details["func"](data, kwargs=details["kwargs"])
-            except Exception as e:
-                print(
-                    f"Error: {repr(e)} -- Index: {i} & {data.shape[0]} -- Metric: {metric}"
-                )
+        for i, window in enumerate(station_rolling):
+            if window.empty:
                 continue
 
-            if metric == "mfhurst_b":
-                result = result[0]
-            metric_data[metric].append(result)
+            data = window[station].dropna().to_numpy()
+            metric_data["datetime"].append(df_station.index[i])
+            metric_data["value"].append(df_station.iloc[i, 0])
+            metric_data["window_shape"].append(data.shape[0])
+
+            for metric, details in METRICS.items():
+                try:
+                    result = details["func"](data, kwargs=details["kwargs"])
+                except Exception as e:
+                    print(
+                        f"Error: {repr(e)} -- Index: {i} -- Size: {data.shape[0]} -- Metric: {metric}"
+                    )
+                    continue
+
+                if metric == "mfhurst_b":
+                    result = result[0]
+                metric_data[metric].append(result)
 
     df_result = pd.DataFrame(metric_data)
     df_result.index = pd.to_datetime(df_result["datetime"])
