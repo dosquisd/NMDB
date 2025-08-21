@@ -65,7 +65,9 @@ def calc_metrics(df: pd.DataFrame, station: str, date: str) -> pd.DataFrame:
                     result = details["func"](data, kwargs=details["kwargs"])
                 except Exception as e:
                     print(
-                        f"Error: {repr(e)} -- Index: {i} -- Size: {data.shape[0]} -- Metric: {metric}"
+                        f"Error: {repr(e)} -- Station: {station}"
+                        + f" -- Index: {i} -- Size: {data.shape[0]}"
+                        + f" -- Metric: {metric}"
                     )
                     continue
 
