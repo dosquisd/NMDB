@@ -24,6 +24,8 @@ class MetricDetails(TypedDict):
     kwargs: Dict[str, Any]
 
 
+NAN_THRESHOLD: float = 0.5
+
 WINDOW_SIZE = 130  # 1 unit === 1 minute each window
 
 # Dictionary containing all available metrics for analysis
@@ -91,11 +93,11 @@ METRICS: Dict[str, MetricDetails] = {
     },
 
     # Chaos indicators
-    "lyap_r": {
-        "func": lambda x, kwargs: nolds.lyap_r(x, **kwargs),
-        "data": [],
-        "kwargs": {},
-    },
+    # "lyap_r": {
+    #     "func": lambda x, kwargs: nolds.lyap_r(x, **kwargs),
+    #     "data": [],
+    #     "kwargs": {},
+    # },
     "corr_dim": {
         "func": lambda x, kwargs: nolds.corr_dim(x, **kwargs),
         "kwargs": {"emb_dim": 2},
