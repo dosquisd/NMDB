@@ -98,7 +98,7 @@ def plot(
         The function expects the DataFrame to have 'datetime', 'metric', and 'value' columns
         in long format for seaborn compatibility.
     """
-    if "*" not in metrics:
+    if are_metrics and "*" not in metrics:
         try:
             plot_df = df[df["metric"].isin(metrics)]
         except KeyError:
@@ -154,6 +154,7 @@ def plot_metrics(
     freq_date_range_2: str = "30min",
     save_format: str = "pdf",
     suffix: str = "",
+    show: bool = True,
 ) -> None:
     """Create comprehensive metric plots for neutron monitor data analysis.
 
@@ -174,6 +175,7 @@ def plot_metrics(
         freq_date_range_2: Frequency for x-axis ticks in the metrics plot.
         save_format: File format for saving the plot ('pdf', 'png', etc.).
         suffix: Optional suffix for the saved plot filename.
+        show: Whether to display the plot interactively.
 
     Side Effects:
         - Displays the plot using plt.show()
@@ -255,4 +257,6 @@ def plot_metrics(
         f"./figures/{event.replace(' ', '')}/{date}/{station.lower()}"
         + f"_metrics-windowsize_{window_size}{(f'-{suffix}') if suffix else ''}.{save_format}"
     )
-    plt.show()
+
+    if show:
+        plt.show()
