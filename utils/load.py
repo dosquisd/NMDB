@@ -5,8 +5,10 @@ from text files into pandas DataFrames.
 """
 
 import pandas as pd
+from functools import lru_cache
 
 
+@lru_cache(maxsize=None)
 def load_data(file_path: str) -> pd.DataFrame:
     """Load and read neutron monitor data from a specified file path.
     
