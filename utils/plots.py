@@ -78,6 +78,7 @@ def plot(
     *,
     metrics: list[str] = ["*"],
     freq_date_range: str = "",
+    rotation_xticks: int = 60,
     are_metrics: bool = True,
 ) -> None:
     """Create a line plot of metrics over time.
@@ -90,6 +91,8 @@ def plot(
         ax: Matplotlib axes object to plot on.
         metrics: List of metric names to plot. Use ["*"] to plot all metrics.
         freq_date_range: Frequency string for x-axis tick spacing (e.g., '2h', '30min').
+        rotation_xticks: Rotation angle for x-axis tick labels.
+        are_metrics: Boolean indicating if the DataFrame contains multiple metrics.
 
     Side Effects:
         Modifies the provided axes object by adding the plot, grid, legend, and formatting.
@@ -132,7 +135,7 @@ def plot(
         ax.set_xticks(
             ticks=date_range,
             labels=list(map(lambda x: x.strftime("%Y-%m-%d %H:%M:%S"), date_range)),
-            rotation=60,
+            rotation=rotation_xticks,
             ha="right",
         )
 
@@ -150,8 +153,7 @@ def plot_metrics(
     station: str = "",
     min_datetime: str = "",
     max_datetime: str = "",
-    freq_date_range_1: str = "2h",
-    freq_date_range_2: str = "30min",
+    freq_date_range: str = "1h",
     save_format: str = "pdf",
     suffix: str = "",
     show: bool = True,
@@ -171,8 +173,7 @@ def plot_metrics(
         station: Station identifier for the neutron monitor.
         min_datetime: Start datetime for the time window markers in ISO format.
         max_datetime: End datetime for the time window markers in ISO format.
-        freq_date_range_1: Frequency for x-axis ticks in the overview plot.
-        freq_date_range_2: Frequency for x-axis ticks in the metrics plot.
+        freq_date_range: Frequency for x-axis ticks in the overview plot.
         save_format: File format for saving the plot ('pdf', 'png', etc.).
         suffix: Optional suffix for the saved plot filename.
         show: Whether to display the plot interactively.
@@ -212,17 +213,18 @@ def plot_metrics(
 
     df_plot = pd.DataFrame(data)
 
-    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
 
-    # Plotting all metrics for the PWNK station of all time serie
-    plot(df, axes[0], freq_date_range=freq_date_range_1, are_metrics=False)
+    # Plotting the time series data
+    plot(df, axes[0], are_metrics=False)
 
     # Plot metrics
     plot(
         df_plot,
         axes[1],
-        freq_date_range=freq_date_range_2,
+        freq_date_range=freq_date_range,
         metrics=relevant_metrics,  # Metrics important for me
+        rotation_xticks=60,
         are_metrics=True,
     )
 
