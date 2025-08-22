@@ -1,7 +1,7 @@
 [project]
 name = "nmdb"
 version = "0.1.0"
-description = "Add your description here"
+description = "Analysis utilities and notebooks for NMDB neutron monitor data (Forbush Decrease events): data loading, sliding-window complexity metrics and plotting."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
