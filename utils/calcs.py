@@ -9,7 +9,9 @@ import pandas as pd
 from utils.constants import WINDOW_SIZE, METRICS
 
 
-def calc_metrics(df: pd.DataFrame, station: str, date: str) -> pd.DataFrame:
+def calc_metrics(
+    df: pd.DataFrame, station: str, date: str, suffix: str = ""
+) -> pd.DataFrame:
     """Calculate statistical metrics for a given station and date.
 
     Computes various complexity and statistical metrics on neutron monitor data
@@ -20,6 +22,7 @@ def calc_metrics(df: pd.DataFrame, station: str, date: str) -> pd.DataFrame:
         df: DataFrame containing the neutron monitor data with station columns.
         station: The station identifier (will be converted to uppercase).
         date: The date for which to calculate metrics in 'YYYY-MM-DD' format.
+        suffix: Optional suffix for the output file name.
 
     Returns:
         A DataFrame with calculated metrics indexed by datetime. Contains
@@ -81,7 +84,7 @@ def calc_metrics(df: pd.DataFrame, station: str, date: str) -> pd.DataFrame:
 
     df_result.to_csv(
         f"./data/ForbushDecrease/{date}/{station.lower()}_"
-        + f"metrics-windowsize_{WINDOW_SIZE}.csv"
+        + f"metrics-windowsize_{WINDOW_SIZE}{(f'-{suffix}') if suffix else ''}.csv"
     )
 
     return df_result

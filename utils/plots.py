@@ -33,6 +33,7 @@ def read_metrics_file(
     station: str,
     window_size: int,
     datetime_cols: dict[str, str] = None,
+    suffix: str = "",
 ) -> pd.DataFrame:
     """Read a pre-calculated metrics file for visualization.
 
@@ -45,6 +46,7 @@ def read_metrics_file(
         station: The station identifier.
         window_size: The window size used for metrics calculation.
         datetime_cols: Optional dictionary mapping column names to datetime formats.
+        suffix: Optional suffix for the metrics file name.
 
     Returns:
         A DataFrame containing the metrics data with datetime index.
@@ -54,7 +56,7 @@ def read_metrics_file(
         pandas.errors.EmptyDataError: If the file is empty or corrupted.
     """
     file_path = (
-        f"./data/{event}/{date}/{station.lower()}_metrics-windowsize_{window_size}.csv"
+        f"./data/{event}/{date}/{station.lower()}_metrics-windowsize_{window_size}{suffix}.csv"
     )
 
     df = pd.read_csv(file_path)

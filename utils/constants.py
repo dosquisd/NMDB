@@ -9,7 +9,7 @@ import antropy as ant
 from scipy.stats import entropy
 
 import numpy as np
-from typing import Dict, TypedDict, Callable, Any, Literal
+from typing import Dict, TypedDict, Callable, Any, Literal, Optional
 
 
 class MetricDetails(TypedDict):
@@ -27,6 +27,8 @@ class MetricDetails(TypedDict):
 NAN_THRESHOLD: float = 0.5
 
 WINDOW_SIZE = 130  # 1 unit === 1 minute each window
+
+EWM_ALPHA: Optional[float] = 0.15  # Smoothing factor for Exponential Weighted Mean
 
 # Dictionary containing all available metrics for analysis
 METRICS: Dict[str, MetricDetails] = {
