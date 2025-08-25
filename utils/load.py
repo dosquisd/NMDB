@@ -64,3 +64,48 @@ def load_data(file_path: str) -> pd.DataFrame:
 
     df = pd.DataFrame(rows, columns=columns)
     return df
+
+
+def read_metrics_file(
+    event: str,
+    date: str,
+    station: str,
+    window_size: int,
+    datetime_cols: dict[str, str] = None,
+    suffix: str = "",
+) -> pd.DataFrame:
+    """Read a pre-calculated metrics file for visualization.
+
+    Loads the CSV file containing calculated metrics for a specific event,
+    date, and station combination.
+
+    Args:
+        event: The type of event (e.g., 'ForbushDecrease', 'GroundLevelEnhancement').
+        date: The date in 'YYYY-MM-DD' format.
+        station: The station identifier.
+        window_size: The window size used for metrics calculation.
+        datetime_cols: Optional dictionary mapping column names to datetime formats.
+        suffix: Optional suffix for the metrics file name.
+
+    Returns:
+        A DataFrame containing the metrics data with datetime index.
+
+    Raises:
+        FileNotFoundError: If the metrics file does not exist.
+        pandas.errors.EmptyDataError: If the file is empty or corrupted.
+    """
+    file_path = f"./data/{event}/{date}/{station.lower()}_metrics-windowsize_{window_size}{suffix}.csv"
+
+    df = pd.read_csv(file_path)
+    if datetime_cols is None:
+        return df
+
+    for col, fmt in datetime_cols.items():
+        if col in df.columns:
+            fmt = fmt or "%Y-%m-%d %H:%M:%S"  # Default format if not provided
+            try:
+                df[col] = pd.to_datetime(df[col], format=fmt, errors="coerce")
+            except ValueError:
+                raise ValueError(f"Column '{col}' could not be parsed as datetime.")
+
+    return df

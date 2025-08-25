@@ -11,7 +11,9 @@ import scienceplots  # noqa: F401
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from utils.constants import METRICS, Events
+from utils.normalization import z_score
+from utils.load import read_metrics_file
+from utils.constants import METRICS, Events, OFFSET
 
 
 # LaTeX must be installed previously for this to work
@@ -25,53 +27,6 @@ plt.rcParams.update(
         "legend.fontsize": 12,
     }
 )
-
-
-def read_metrics_file(
-    event: str,
-    date: str,
-    station: str,
-    window_size: int,
-    datetime_cols: dict[str, str] = None,
-    suffix: str = "",
-) -> pd.DataFrame:
-    """Read a pre-calculated metrics file for visualization.
-
-    Loads the CSV file containing calculated metrics for a specific event,
-    date, and station combination.
-
-    Args:
-        event: The type of event (e.g., 'ForbushDecrease', 'GroundLevelEnhancement').
-        date: The date in 'YYYY-MM-DD' format.
-        station: The station identifier.
-        window_size: The window size used for metrics calculation.
-        datetime_cols: Optional dictionary mapping column names to datetime formats.
-        suffix: Optional suffix for the metrics file name.
-
-    Returns:
-        A DataFrame containing the metrics data with datetime index.
-
-    Raises:
-        FileNotFoundError: If the metrics file does not exist.
-        pandas.errors.EmptyDataError: If the file is empty or corrupted.
-    """
-    file_path = (
-        f"./data/{event}/{date}/{station.lower()}_metrics-windowsize_{window_size}{suffix}.csv"
-    )
-
-    df = pd.read_csv(file_path)
-    if datetime_cols is None:
-        return df
-
-    for col, fmt in datetime_cols.items():
-        if col in df.columns:
-            fmt = fmt or "%Y-%m-%d %H:%M:%S"  # Default format if not provided
-            try:
-                df[col] = pd.to_datetime(df[col], format=fmt, errors="coerce")
-            except ValueError:
-                raise ValueError(f"Column '{col}' could not be parsed as datetime.")
-
-    return df
 
 
 def plot(
@@ -256,6 +211,164 @@ def plot_metrics(
     plt.savefig(
         f"./figures/{event.replace(' ', '')}/{date}/{station.lower()}"
         + f"_metrics-windowsize_{window_size}{(f'-{suffix}') if suffix else ''}.{save_format}"
+    )
+
+    if show:
+        plt.show()
+
+
+def plot_metrics_one(
+    *,
+    window_size: int,
+    relevant_metrics: list[str] = None,
+    df: pd.DataFrame = None,
+    event: Events = "Forbush Decrease",
+    date: str = "",
+    station: str = "",
+    suffix: str = "",
+    min_datetime: str = "",
+    max_datetime: str = "",
+    freq_date_range: str = "1h",
+    rotation_xticks: int = 60,
+    save_format: str = "pdf",
+    figsize: tuple[int, int] = None,
+    show: bool = True,
+) -> None:
+    """
+    Create a single-panel plot of all metrics for neutron monitor data analysis.
+
+    Args:
+        window_size (int): Window size used for metric calculations.
+        relevant_metrics (list[str]): List of metric names to highlight in the detailed view.
+        df (pandas.DataFrame): Optional DataFrame containing pre-calculated metrics. If None, reads from file.
+        event (str): Type of cosmic ray event being analyzed.
+        date (str): Date of the event in 'YYYY-MM-DD' format.
+        station (str): Station identifier for the neutron monitor.
+        suffix (str): Optional suffix for the metrics file name.
+        min_datetime (str): Start datetime for the time window markers in ISO format.
+        max_datetime (str): End datetime for the time window markers in ISO format.
+        freq_date_range (str): Frequency for x-axis ticks in the overview plot.
+        rotation_xticks (int): Rotation angle for x-axis tick labels.
+        save_format (str): File format for saving the plot ('pdf', 'png', etc.).
+        show (bool): Whether to display the plot interactively.
+
+    Side Effects:
+        - Displays the plot using plt.show()
+        - Saves the plot to ./figures/{event}/{date}/{station}_metrics-windowsize_{window_size}.{format}
+
+    Raises:
+        FileNotFoundError: If the metrics file cannot be found.
+        ValueError: If datetime strings cannot be parsed.
+
+    Note:
+        The function expects metrics files to be in the standard format created
+        by the calc_metrics function.
+    """
+    if df is None:
+        df = read_metrics_file(
+            event.replace(" ", ""), date, station, window_size, suffix=suffix
+        )
+
+    # Just in case the datetime is not parsed correctly
+    if "datetime" in df.columns:
+        df["datetime"] = pd.to_datetime(df["datetime"])
+
+    # Set default relevant metrics if none provided
+    if relevant_metrics is None:
+        relevant_metrics = ["*"]
+
+    if not min_datetime:
+        min_datetime = df["datetime"].min()
+
+    if not max_datetime:
+        max_datetime = df["datetime"].max()
+
+    if "*" in relevant_metrics:
+        metrics_columns = list(METRICS.keys()) + ["value"]
+    else:
+        metrics_columns = list(filter(lambda x: x in relevant_metrics, df.columns)) \
+                          + ["value"]
+
+    if figsize is None:
+        figsize = (16, 9)
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Normalize and offset metrics for better visualization
+    plot_df = df.copy().set_index("datetime")
+    plot_df[metrics_columns] = z_score(plot_df, metrics_columns)
+
+    for i, col in enumerate(metrics_columns, start=0):
+        plot_df[col] = plot_df[col] + OFFSET * i
+        ax.text(
+            x=plot_df.index[15],
+            y=OFFSET * i + 3,
+            s=col if col != "value" else station.upper(),
+            fontsize=12,
+            va="center",
+            ha="left",
+            fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.2),
+        )
+
+    # Plot all metrics with offsets
+    plot_df[metrics_columns].plot(ax=ax, linewidth=1.5)
+
+    # Annotate each metric line
+    for i, col in enumerate(metrics_columns, start=0):
+        ax.text(
+            x=plot_df.index[15],
+            y=OFFSET * i + 3,
+            s=col if col != "value" else station.upper(),
+            fontsize=12,
+            va="center",
+            ha="left",
+            fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.2),
+        )
+
+    ax.grid(True, linestyle="--", alpha=1)
+    ax.legend().remove()
+
+    ax.set_title(
+        f"{station.upper()} Station - {event} - Window Size {window_size} units",
+        fontsize=16,
+    )
+
+    # Configure x-axis with date formatting
+    if freq_date_range:
+        date_range = pd.date_range(
+            start=df["datetime"].min(),
+            end=df["datetime"].max(),
+            freq=freq_date_range,
+        ).to_list()
+
+        ax.set_xticks(
+            ticks=date_range,
+            labels=list(map(lambda x: x.strftime("%Y-%m-%d %H:%M:%S"), date_range)),
+            rotation=rotation_xticks,
+            ha="right",
+        )
+
+    # Plot vertical lines for min and max dates
+    min_date = pd.to_datetime(min_datetime)
+    max_date = pd.to_datetime(max_datetime)
+
+    ax.axvline(
+        x=min_date,
+        color="red",
+        linestyle="--",
+    )
+    ax.axvline(
+        x=max_date,
+        color="red",
+        linestyle="--",
+    )
+
+    # Save the figure and show it (if specified)
+    plt.savefig(
+        f"./figures/{event.replace(' ', '')}/{date}/{station.lower()}"
+        + f"_metrics-windowsize_{window_size}.{save_format}"
     )
 
     if show:

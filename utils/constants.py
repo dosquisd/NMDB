@@ -30,6 +30,8 @@ WINDOW_SIZE = 130  # 1 unit === 1 minute each window
 
 EWM_ALPHA: Optional[float] = 0.15  # Smoothing factor for Exponential Weighted Mean
 
+OFFSET: int = 10  # Offset for plotting to avoid edge effects
+
 # Dictionary containing all available metrics for analysis
 METRICS: Dict[str, MetricDetails] = {
     # Entropy
