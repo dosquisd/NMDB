@@ -148,7 +148,7 @@ def plot_metrics(
         by the calc_metrics function.
     """
     if df is None:
-        df = read_metrics_file(event.replace(" ", ""), date, station, window_size)
+        df = read_metrics_file(event, date, station, window_size)
 
     # Just in case the datetime is not parsed correctly
     df["datetime"] = pd.to_datetime(df["datetime"])
@@ -265,9 +265,7 @@ def plot_metrics_one(
         by the calc_metrics function.
     """
     if df is None:
-        df = read_metrics_file(
-            event.replace(" ", ""), date, station, window_size, suffix=suffix
-        )
+        df = read_metrics_file(event, date, station, window_size, suffix=suffix)
 
     # Just in case the datetime is not parsed correctly
     if "datetime" in df.columns:
@@ -286,8 +284,9 @@ def plot_metrics_one(
     if "*" in relevant_metrics:
         metrics_columns = list(METRICS.keys()) + ["value"]
     else:
-        metrics_columns = list(filter(lambda x: x in relevant_metrics, df.columns)) \
-                          + ["value"]
+        metrics_columns = list(filter(lambda x: x in relevant_metrics, df.columns)) + [
+            "value"
+        ]
 
     if figsize is None:
         figsize = (16, 9)

@@ -84,7 +84,7 @@ def load_data(file_path: str) -> pd.DataFrame:
 
 
 def read_metrics_file(
-    event: str,
+    event: Events,
     date: str,
     station: str,
     window_size: int,
@@ -97,12 +97,12 @@ def read_metrics_file(
     date, and station combination.
 
     Args:
-        event: The type of event (e.g., 'ForbushDecrease', 'GroundLevelEnhancement').
-        date: The date in 'YYYY-MM-DD' format.
-        station: The station identifier.
-        window_size: The window size used for metrics calculation.
-        datetime_cols: Optional dictionary mapping column names to datetime formats.
-        suffix: Optional suffix for the metrics file name.
+        event (Events): The type of event (e.g., 'ForbushDecrease', 'GroundLevelEnhancement').
+        date (str): The date in 'YYYY-MM-DD' format.
+        station (str): The station identifier.
+        window_size (int): The window size used for metrics calculation.
+        datetime_cols (dict[str, str]): Optional dictionary mapping column names to datetime formats.
+        suffix (str): Optional suffix for the metrics file name.
 
     Returns:
         A DataFrame containing the metrics data with datetime index.
@@ -111,7 +111,7 @@ def read_metrics_file(
         FileNotFoundError: If the metrics file does not exist.
         pandas.errors.EmptyDataError: If the file is empty or corrupted.
     """
-    file_path = f"./data/{event}/{date}/{station.lower()}_metrics-windowsize_{window_size}{suffix}.csv"
+    file_path = f"./data/{event.replace(' ', '')}/{date}/{station.lower()}_metrics-windowsize_{window_size}{suffix}.csv"
 
     df = pd.read_csv(file_path)
     if datetime_cols is None:
