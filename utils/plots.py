@@ -313,17 +313,38 @@ def plot_metrics_one(
             bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.2),
         )
 
-    # Plot all metrics with offsets (TODO: test with seaborn instead of pandas)
-    plot_df[metrics_columns].plot(ax=ax, linewidth=1.5)
+    # Plot all metrics with offsets
+    data = {"datetime": [], "metric": [], "value": [], "window_shape": []}
+    for _, row in plot_df.reset_index().iterrows():
+        for metric in metrics_columns:
+            data["datetime"].append(row["datetime"])
+            data["metric"].append(metric)
+            data["value"].append(row[metric])
+            data["window_shape"].append(row["window_shape"])
+
+    plot_df = pd.DataFrame(data)
+
+    sns.lineplot(
+        data=plot_df,
+        x="datetime",
+        y="value",
+        hue="metric",
+        ax=ax,
+    )
+
+    # Set title and labels
+    ax.set_xlabel("Date", fontsize=14)
+    ax.set_ylabel("")
 
     ax.set_title(
         f"{station.upper()} Station - {event} - Window Size {window_size} units",
         fontsize=16,
     )
 
+    ax.set_yticklabels([])
+
     # Configure x-axis with date formatting
     if freq_hours > 0:
-        print(1)
         setup_datetime_axis(ax, freq_hours)
 
     # Plot vertical lines for min and max dates
