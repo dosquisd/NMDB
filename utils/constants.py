@@ -12,6 +12,12 @@ import numpy as np
 from typing import Dict, TypedDict, Callable, Any, Literal, Optional
 
 
+DatetimeBounds = list[str, str]
+
+# Type alias for supported event types
+Events = Literal["Forbush Decrease", "Ground Level Enhancement"]
+
+
 class MetricDetails(TypedDict):
     """Type definition for metric configuration.
 
@@ -22,6 +28,23 @@ class MetricDetails(TypedDict):
 
     func: Callable[..., np.float64 | np.ndarray]
     kwargs: Dict[str, Any]
+
+
+class DateEventsInfo(TypedDict):
+    """
+    Information about the event date.
+
+    Attributes:
+        bounds: list[DatetimeBounds]. The start and end bounds of the event date. Generally,
+                the bounds are the same for all stations.
+        freq: str. The frequency of the data for the event date.
+        stations: dict[str, Optional[DatetimeBounds]]. The list of relevant stations
+                  for the event date.
+    """
+
+    bounds: list[DatetimeBounds]
+    freq: str
+    stations: dict[str, Optional[DatetimeBounds]]
 
 
 NAN_THRESHOLD: float = 0.5
@@ -61,7 +84,6 @@ METRICS: Dict[str, MetricDetails] = {
         "func": lambda x, kwargs: ant.app_entropy(x, **kwargs),
         "kwargs": {},
     },
-
     # Hurst exponent
     "hurst": {
         "func": lambda x, kwargs: nolds.hurst_rs(x, **kwargs),
@@ -77,7 +99,6 @@ METRICS: Dict[str, MetricDetails] = {
         "func": lambda x, kwargs: nolds.mfhurst_b(x, **kwargs),
         "kwargs": {},
     },
-
     # Fractal dimension
     "higuchi_fd": {
         "func": lambda x, kwargs: ant.higuchi_fd(x, **kwargs),
@@ -95,7 +116,6 @@ METRICS: Dict[str, MetricDetails] = {
         "func": lambda x, kwargs: ant.lziv_complexity(np.array(x), **kwargs),
         "kwargs": {},
     },
-
     # Chaos indicators
     # "lyap_r": {
     #     "func": lambda x, kwargs: nolds.lyap_r(x, **kwargs),
@@ -108,5 +128,56 @@ METRICS: Dict[str, MetricDetails] = {
     },
 }
 
-# Type alias for supported event types
-Events = Literal["Forbush Decrease", "Ground Level Enhancement"]
+# Relevant dates for the event
+# Stations lists are only examples where the event was clear;
+# can be modify them as needed
+# TODO: Fix datetime event for each station
+datetimes: dict[str, Optional[DateEventsInfo]] = {
+    "2023-04-23": {
+        "bounds": ["2023-04-23 23:00:00", "2023-04-24 06:00:00"],
+        "freq": "1h",
+        "stations": {
+            "AATB": None,
+            "APTY": None,
+            "IRK2": None,
+            "LMKS": None,
+            "NEWK": None,
+            "NAIN": None,
+            "SOPO": None,
+        },
+    },
+    "2024-03-24": {
+        "bounds": ["2024-03-24 14:00:00", "2024-03-25 04:30:00"],
+        "freq": "90min",
+        "stations": {
+            "APTY": None,
+            "DOMC": None,
+            "INVK": None,
+            "JUNG1": None,
+            "KIEL2": None,
+            "LMKS": None,
+            "MWSN": None,
+            "NEWK": None,
+            "MXCO": None,
+            "OULU": None,
+            # TXBY, YKTK
+        },
+    },
+    "2024-05-10": {
+        "bounds": ["2024-05-10 18:00:00", "2024-05-11 01:00:00"],
+        "freq": "1h",
+        "stations": {
+            "APTY": None,
+            "DOMB": None,
+            "DOMC": None,
+            "INVK": None,
+            "IRK3": None,
+            "JBGO": None,
+            "KERG": None,
+            "KIEL2": None,
+            "LMKS": None,
+            "MWSN": None,
+            # SOPB, PWNK, SOPO, TERA, THUL, TXBY, YKTK
+        },
+    },
+}

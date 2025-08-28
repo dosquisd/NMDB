@@ -10,6 +10,7 @@ import pandas as pd
 import scienceplots  # noqa: F401
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 from utils.normalization import z_score
 from utils.load import read_metrics_file
@@ -29,13 +30,27 @@ plt.rcParams.update(
 )
 
 
+def setup_datetime_axis(ax, hours=2):
+    major_locator = mdates.DayLocator()
+    minor_locator = mdates.HourLocator(interval=hours)
+    major_formatter = mdates.DateFormatter("%m-%d")
+    minor_formatter = mdates.DateFormatter("%H")
+
+    ax.xaxis.set_major_locator(major_locator)
+    ax.xaxis.set_major_formatter(major_formatter)
+    ax.xaxis.set_minor_locator(minor_locator)
+    ax.xaxis.set_minor_formatter(minor_formatter)
+
+    ax.tick_params(which="major", labelsize=10, rotation=0, pad=10)
+    ax.tick_params(which="minor", labelsize=8, rotation=0, pad=2)
+
+
 def plot(
     df: pd.DataFrame,
     ax: plt.Axes,
     *,
     metrics: list[str] = ["*"],
-    freq_date_range: str = "",
-    rotation_xticks: int = 60,
+    freq_hours: int = 0,
     are_metrics: bool = True,
 ) -> None:
     """Create a line plot of metrics over time.
@@ -47,7 +62,7 @@ def plot(
         df: DataFrame containing metrics data with 'datetime', 'metric', and 'value' columns.
         ax: Matplotlib axes object to plot on.
         metrics: List of metric names to plot. Use ["*"] to plot all metrics.
-        freq_date_range: Frequency string for x-axis tick spacing (e.g., '2h', '30min').
+        freq_hours: Frequency hours string for x-axis tick spacing.
         rotation_xticks: Rotation angle for x-axis tick labels.
         are_metrics: Boolean indicating if the DataFrame contains multiple metrics.
 
@@ -82,22 +97,11 @@ def plot(
             ax=ax,
         )
 
-    if freq_date_range:
-        date_range = pd.date_range(
-            start=plot_df["datetime"].min(),
-            end=plot_df["datetime"].max(),
-            freq=freq_date_range,
-        ).to_list()
+    if freq_hours > 0:
+        setup_datetime_axis(ax, freq_hours)
 
-        ax.set_xticks(
-            ticks=date_range,
-            labels=list(map(lambda x: x.strftime("%Y-%m-%d %H:%M:%S"), date_range)),
-            rotation=rotation_xticks,
-            ha="right",
-        )
-
-    ax.grid()
-    ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left", borderaxespad=0.0)
+    ax.grid(True, which="major", alpha=0.8, linestyle="--")
+    ax.legend(bbox_to_anchor=(1, 1), loc="upper left", borderaxespad=0.0)
 
 
 def plot_metrics(
@@ -110,7 +114,7 @@ def plot_metrics(
     station: str = "",
     min_datetime: str = "",
     max_datetime: str = "",
-    freq_date_range: str = "1h",
+    freq_hours: int = 2,
     save_format: str = "pdf",
     suffix: str = "",
     show: bool = True,
@@ -130,7 +134,7 @@ def plot_metrics(
         station: Station identifier for the neutron monitor.
         min_datetime: Start datetime for the time window markers in ISO format.
         max_datetime: End datetime for the time window markers in ISO format.
-        freq_date_range: Frequency for x-axis ticks in the overview plot.
+        freq_hours: Frequency hours for x-axis ticks in the overview plot.
         save_format: File format for saving the plot ('pdf', 'png', etc.).
         suffix: Optional suffix for the saved plot filename.
         show: Whether to display the plot interactively.
@@ -179,9 +183,8 @@ def plot_metrics(
     plot(
         df_plot,
         axes[1],
-        freq_date_range=freq_date_range,
+        freq_hours=freq_hours,
         metrics=relevant_metrics,  # Metrics important for me
-        rotation_xticks=60,
         are_metrics=True,
     )
 
@@ -192,12 +195,12 @@ def plot_metrics(
     for ax in axes.flatten():
         ax.axvline(
             x=min_date,
-            color="red",
+            color="black",
             linestyle="--",
         )
         ax.axvline(
             x=max_date,
-            color="red",
+            color="black",
             linestyle="--",
         )
 
@@ -228,8 +231,7 @@ def plot_metrics_one(
     suffix: str = "",
     min_datetime: str = "",
     max_datetime: str = "",
-    freq_date_range: str = "1h",
-    rotation_xticks: int = 60,
+    freq_hours: int = 2,
     save_format: str = "pdf",
     figsize: tuple[int, int] = None,
     show: bool = True,
@@ -247,8 +249,7 @@ def plot_metrics_one(
         suffix (str): Optional suffix for the metrics file name.
         min_datetime (str): Start datetime for the time window markers in ISO format.
         max_datetime (str): End datetime for the time window markers in ISO format.
-        freq_date_range (str): Frequency for x-axis ticks in the overview plot.
-        rotation_xticks (int): Rotation angle for x-axis tick labels.
+        freq_hours (int): Frequency hours for x-axis ticks in the overview plot.
         save_format (str): File format for saving the plot ('pdf', 'png', etc.).
         show (bool): Whether to display the plot interactively.
 
@@ -264,6 +265,8 @@ def plot_metrics_one(
         The function expects metrics files to be in the standard format created
         by the calc_metrics function.
     """
+    delta = 3
+
     if df is None:
         df = read_metrics_file(event, date, station, window_size, suffix=suffix)
 
@@ -301,7 +304,7 @@ def plot_metrics_one(
         plot_df[col] = plot_df[col] + OFFSET * i
         ax.text(
             x=plot_df.index[15],
-            y=OFFSET * i + 3,
+            y=OFFSET * i + delta,
             s=col if col != "value" else station.upper(),
             fontsize=12,
             va="center",
@@ -310,24 +313,8 @@ def plot_metrics_one(
             bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.2),
         )
 
-    # Plot all metrics with offsets
+    # Plot all metrics with offsets (TODO: test with seaborn instead of pandas)
     plot_df[metrics_columns].plot(ax=ax, linewidth=1.5)
-
-    # Annotate each metric line
-    for i, col in enumerate(metrics_columns, start=0):
-        ax.text(
-            x=plot_df.index[15],
-            y=OFFSET * i + 3,
-            s=col if col != "value" else station.upper(),
-            fontsize=12,
-            va="center",
-            ha="left",
-            fontweight="bold",
-            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.2),
-        )
-
-    ax.grid(True, linestyle="--", alpha=1)
-    ax.legend().remove()
 
     ax.set_title(
         f"{station.upper()} Station - {event} - Window Size {window_size} units",
@@ -335,19 +322,9 @@ def plot_metrics_one(
     )
 
     # Configure x-axis with date formatting
-    if freq_date_range:
-        date_range = pd.date_range(
-            start=df["datetime"].min(),
-            end=df["datetime"].max(),
-            freq=freq_date_range,
-        ).to_list()
-
-        ax.set_xticks(
-            ticks=date_range,
-            labels=list(map(lambda x: x.strftime("%Y-%m-%d %H:%M:%S"), date_range)),
-            rotation=rotation_xticks,
-            ha="right",
-        )
+    if freq_hours > 0:
+        print(1)
+        setup_datetime_axis(ax, freq_hours)
 
     # Plot vertical lines for min and max dates
     min_date = pd.to_datetime(min_datetime)
@@ -355,14 +332,17 @@ def plot_metrics_one(
 
     ax.axvline(
         x=min_date,
-        color="red",
+        color="black",
         linestyle="--",
     )
     ax.axvline(
         x=max_date,
-        color="red",
+        color="black",
         linestyle="--",
     )
+
+    ax.grid(True, which="major", alpha=0.8, linestyle="--")
+    ax.legend().remove()
 
     # Save the figure and show it (if specified)
     plt.savefig(
