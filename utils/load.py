@@ -76,7 +76,7 @@ def load_data(file_path: str) -> pd.DataFrame:
         columns = ["datetime"] + list(map(lambda x: x.strip(), header))
         rows = list(map(clean_row, lines[1:]))
 
-        if len(rows[0] != len(columns)):
+        if rows[0] != len(columns):
             rows = list(map(lambda x: x[1:], rows))  # Remove first column (duplicate datetime)
 
     df = pd.DataFrame(rows, columns=columns)
