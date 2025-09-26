@@ -101,7 +101,9 @@ def plot(
         setup_datetime_axis(ax, freq_hours)
 
     ax.grid(True, which="major", alpha=0.8, linestyle="--")
-    ax.legend(bbox_to_anchor=(1, 1), loc="upper left", borderaxespad=0.0)
+
+    if are_metrics:
+        ax.legend(bbox_to_anchor=(1, 1), loc="upper left", borderaxespad=0.0)
 
 
 def plot_metrics(
