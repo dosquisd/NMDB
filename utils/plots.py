@@ -52,6 +52,7 @@ def plot(
     metrics: list[str] = ["*"],
     freq_hours: int = 0,
     are_metrics: bool = True,
+    kwargs_metrics_false: dict = None,
 ) -> None:
     """Create a line plot of metrics over time.
 
@@ -65,6 +66,7 @@ def plot(
         freq_hours: Frequency hours string for x-axis tick spacing.
         rotation_xticks: Rotation angle for x-axis tick labels.
         are_metrics: Boolean indicating if the DataFrame contains multiple metrics.
+        kwargs_metrics_false: Additional keyword arguments for seaborn lineplot when are_metrics is False.
 
     Side Effects:
         Modifies the provided axes object by adding the plot, grid, legend, and formatting.
@@ -95,6 +97,7 @@ def plot(
             x="datetime",
             y="value",
             ax=ax,
+            **(kwargs_metrics_false or {})
         )
 
     if freq_hours > 0:
