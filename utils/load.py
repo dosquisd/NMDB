@@ -4,8 +4,10 @@ This module provides functions to load and process neutron monitor data
 from text files into pandas DataFrames.
 """
 
-import pandas as pd
 from functools import lru_cache
+
+import pandas as pd
+
 from utils.constants import Events
 
 
@@ -63,7 +65,9 @@ def load_data(file_path: str) -> pd.DataFrame:
 
             # Parse datetime values
             try:
-                cleaned_values.append(pd.to_datetime(value, format="%Y-%m-%d %H:%M:%S"))
+                cleaned_values.append(
+                    pd.to_datetime(value, format="%Y-%m-%d %H:%M:%S")
+                )
                 continue
             except Exception:  # ValueError, DateParseError
                 pass
@@ -77,7 +81,9 @@ def load_data(file_path: str) -> pd.DataFrame:
         rows = list(map(clean_row, lines[1:]))
 
         if rows[0] != len(columns):
-            rows = list(map(lambda x: x[1:], rows))  # Remove first column (duplicate datetime)
+            rows = list(
+                map(lambda x: x[1:], rows)
+            )  # Remove first column (duplicate datetime)
 
     df = pd.DataFrame(rows, columns=columns)
     return df
@@ -123,6 +129,8 @@ def read_metrics_file(
             try:
                 df[col] = pd.to_datetime(df[col], format=fmt, errors="coerce")
             except ValueError:
-                raise ValueError(f"Column '{col}' could not be parsed as datetime.")
+                raise ValueError(
+                    f"Column '{col}' could not be parsed as datetime."
+                )
 
     return df

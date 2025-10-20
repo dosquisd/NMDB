@@ -5,17 +5,15 @@ from neutron monitor data analysis, including time series plots and comparative
 analysis plots.
 """
 
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import pandas as pd
-
 import scienceplots  # noqa: F401
 import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 
-from utils.normalization import z_score
+from utils.constants import METRICS, OFFSET, Events
 from utils.load import read_metrics_file
-from utils.constants import METRICS, Events, OFFSET
-
+from utils.normalization import z_score
 
 # LaTeX must be installed previously for this to work
 plt.style.use(["science", "nature"])
@@ -97,7 +95,7 @@ def plot(
             x="datetime",
             y="value",
             ax=ax,
-            **(kwargs_metrics_false or {})
+            **(kwargs_metrics_false or {}),
         )
 
     if freq_hours > 0:
@@ -292,9 +290,9 @@ def plot_metrics_one(
     if "*" in relevant_metrics:
         metrics_columns = list(METRICS.keys()) + ["value"]
     else:
-        metrics_columns = list(filter(lambda x: x in relevant_metrics, df.columns)) + [
-            "value"
-        ]
+        metrics_columns = list(
+            filter(lambda x: x in relevant_metrics, df.columns)
+        ) + ["value"]
 
     if figsize is None:
         figsize = (16, 9)

@@ -4,13 +4,12 @@ This module defines constants, metrics, and type definitions used throughout
 the NMDB (Neutron Monitor Database) analysis pipeline.
 """
 
-import nolds
+from typing import Any, Callable, Dict, Literal, Optional, TypedDict
+
 import antropy as ant
-from scipy.stats import entropy
-
+import nolds
 import numpy as np
-from typing import Dict, TypedDict, Callable, Any, Literal, Optional
-
+from scipy.stats import entropy
 
 DatetimeBounds = list[str, str]
 
@@ -51,7 +50,9 @@ NAN_THRESHOLD: float = 0.5
 
 WINDOW_SIZE = 130  # 1 unit === 1 minute each window
 
-EWM_ALPHA: Optional[float] = 0.15  # Smoothing factor for Exponential Weighted Mean
+EWM_ALPHA: Optional[float] = (
+    0.15  # Smoothing factor for Exponential Weighted Mean
+)
 
 OFFSET: int = 10  # Offset for plotting to avoid edge effects
 
@@ -68,7 +69,11 @@ METRICS: Dict[str, MetricDetails] = {
     },
     "permutation_entropy": {
         "func": lambda x, kwargs: ant.perm_entropy(x, **kwargs),
-        "kwargs": {"normalize": False, "order": 3, "delay": 1},  # Default parameters
+        "kwargs": {
+            "normalize": False,
+            "order": 3,
+            "delay": 1,
+        },  # Default parameters
     },
     "shannon_entropy": {
         "func": lambda x, kwargs: entropy(

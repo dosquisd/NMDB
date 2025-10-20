@@ -5,8 +5,10 @@ data using rolling windows and statistical measures.
 """
 
 import warnings
+
 import pandas as pd
-from utils.constants import WINDOW_SIZE, METRICS
+
+from utils.constants import METRICS, WINDOW_SIZE
 
 
 def calc_metrics(

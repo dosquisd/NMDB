@@ -1,9 +1,11 @@
+from typing import Optional, Union
+
 import pandas as pd
-from typing import Union, Optional
 
 
 def z_score(
-    orig_data: Union[pd.DataFrame, pd.Series], columns: Optional[list[str]] = None
+    orig_data: Union[pd.DataFrame, pd.Series],
+    columns: Optional[list[str]] = None,
 ) -> Union[pd.DataFrame, pd.Series]:
     """Apply z-score normalization to a DataFrame or Series.
 

@@ -22,12 +22,13 @@ Requirements: pandas, numpy, scipy, statsmodels, matplotlib
 
 import glob
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import scienceplots  # noqa: F401
 from scipy.signal import correlate
 from statsmodels.stats.multitest import multipletests
-import matplotlib.pyplot as plt
-import scienceplots  # noqa: F401
 
 plt.style.use(["science", "nature"])
 plt.rcParams.update(
@@ -45,18 +46,22 @@ plt.rcParams.update(
 CFG = {
     # Eventos presentes en la estructura
     "events": ["2023-04-23", "2024-03-24", "2024-05-10"],
-
     # Carpeta base (ajustada al repo)
     "base_dir": "data/ForbushDecrease",
-
     # Patrones de archivo (primero intenta ewm, si no, sin ewm)
     "pattern_ewm": "{base}/{date}/{station}_metrics-windowsize_130-ewm_alpha_0.15.csv",
     "pattern_raw": "{base}/{date}/{station}_metrics-windowsize_130.csv",
-
     # Detección de columnas (candidatas por tipo)
     "time_cols": ["time", "timestamp", "datetime", "date", "index"],
-    "count_cols": ["count", "counts", "x", "signal", "raw", "nm_count", "value"],
-
+    "count_cols": [
+        "count",
+        "counts",
+        "x",
+        "signal",
+        "raw",
+        "nm_count",
+        "value",
+    ],
     # Nombres de invariantes tal como suelen salir en notebooks
     # (ajustar aquí si en los CSVs se usan otras etiquetas)
     "invariants": [
@@ -68,20 +73,17 @@ CFG = {
         "app_entropy",
         "spectral_entropy",
         "shannon_entropy",
-
         # Complexity related
         "lzc",
         "lepel_ziv",
         "lempel_ziv",
         "lempel_ziv_complexity",
-
         # Hurst related
         "hurst_dfa",
         "dfa",
         "dfa_hurst",
         "hurst",
         "mfhurst_b",
-
         # Fractal dimension related
         "higuchi_fd",
         "katz_fd",
@@ -90,10 +92,7 @@ CFG = {
         "corr_dimension",
         "correlation_dimension",
     ],
-    "unwanted": [
-        "window_shape"
-    ],
-
+    "unwanted": ["window_shape"],
     # Parámetros de derivada y bootstrap
     "alpha": 0.15,  # EWM smoothing
     "W": 130,  # window length (min) para búsqueda local de picos
@@ -102,7 +101,6 @@ CFG = {
     "B": 1000,  # bootstrap replicates
     "block": 30,  # bootstrap block size (min)
     "fdr_alpha": 0.05,
-
     # Salidas
     "out_dir": "outputs",
     "tables_dir": "tables",
@@ -419,12 +417,12 @@ def process_event(date):
 
             # desfase de picos en ventana ±W
             w = min(CFG["W"], n // 2)
-            i_cnt_min = np.argmin(dx[max(0, t0_idx - w) : min(n, t0_idx + w)]) + max(
-                0, t0_idx - w
-            )
-            i_mrk_min = np.argmin(md[max(0, t0_idx - w) : min(n, t0_idx + w)]) + max(
-                0, t0_idx - w
-            )
+            i_cnt_min = np.argmin(
+                dx[max(0, t0_idx - w) : min(n, t0_idx + w)]
+            ) + max(0, t0_idx - w)
+            i_mrk_min = np.argmin(
+                md[max(0, t0_idx - w) : min(n, t0_idx + w)]
+            ) + max(0, t0_idx - w)
             peak_align = i_mrk_min - i_cnt_min
 
             rows.append(
@@ -450,7 +448,9 @@ def process_event(date):
     for inv in res["invariant"].unique():
         mask = res["invariant"] == inv
         p = res.loc[mask, "pval"].values
-        rej, p_adj, _, _ = multipletests(p, alpha=CFG["fdr_alpha"], method="fdr_bh")
+        rej, p_adj, _, _ = multipletests(
+            p, alpha=CFG["fdr_alpha"], method="fdr_bh"
+        )
         res.loc[mask, "pval_adj"] = p_adj
         res.loc[mask, "significant"] = rej.astype(bool)
     return res
@@ -465,7 +465,10 @@ def summarize_global(df):
         df.groupby("invariant")
         .agg(
             median_lag=("lag_star", "median"),
-            iqr_lag=("lag_star", lambda x: np.subtract(*np.nanpercentile(x, [75, 25]))),
+            iqr_lag=(
+                "lag_star",
+                lambda x: np.subtract(*np.nanpercentile(x, [75, 25])),
+            ),
             sig_pct=("significant", lambda x: 100.0 * np.mean(x)),
             n_stations=("station", "nunique"),
         )
@@ -552,7 +555,9 @@ def tex_event_table(e, events):
     rows = "\n".join(rows_list)
 
     # encabezados y especificación de columnas
-    ev_heads = " & ".join([r"\multicolumn{2}{c}{\textbf{%s}}" % ev for ev in events])
+    ev_heads = " & ".join(
+        [r"\multicolumn{2}{c}{\textbf{%s}}" % ev for ev in events]
+    )
     ev_sub = " & ".join([r"$\widetilde{\ell}_k$ & Sig.\ [\%%]"] * len(events))
     colspec = "@{}l " + " ".join(["r r"] * len(events)) + "@{}"
     endcol = 2 * len(events) + 1  # para \cmidrule(lr){2-endcol}
@@ -581,9 +586,9 @@ def tex_event_table(e, events):
 
 
 def heatmap_median_lead(e, events, outpath):
-    piv = e.pivot(index="invariant", columns="date", values="median_lag").reindex(
-        columns=events
-    )
+    piv = e.pivot(
+        index="invariant", columns="date", values="median_lag"
+    ).reindex(columns=events)
     if piv.empty:
         return
     fig, ax = plt.subplots(figsize=(10, max(4, 0.35 * len(piv))))
@@ -592,7 +597,9 @@ def heatmap_median_lead(e, events, outpath):
     ax.set_yticklabels([s.replace("_", " ") for s in piv.index])
     ax.set_xticks(range(len(events)))
     ax.set_xticklabels(events)
-    ax.set_title("Median lead by invariant and event (min; negative = precedes)")
+    ax.set_title(
+        "Median lead by invariant and event (min; negative = precedes)"
+    )
     for i in range(piv.shape[0]):
         for j in range(piv.shape[1]):
             v = piv.values[i, j]
@@ -610,7 +617,9 @@ def violin_lags(df, date, outpath):
     if sub.empty:
         return
     invs = list(sub["invariant"].unique())
-    data = [sub.loc[sub["invariant"] == k, "lag_star"].dropna().values for k in invs]
+    data = [
+        sub.loc[sub["invariant"] == k, "lag_star"].dropna().values for k in invs
+    ]
     labels = [k.replace("_", " ") for k in invs]
     fig, ax = plt.subplots(figsize=(10, max(4, 0.35 * len(labels))))
     _ = ax.violinplot(data, showmedians=True, vert=False)
@@ -660,7 +669,9 @@ def main():
 
     # tablas LaTeX
     (tab_dir / "rank_global.tex").write_text(tex_rank_table(g))
-    (tab_dir / "event_summary.tex").write_text(tex_event_table(e, CFG["events"]))
+    (tab_dir / "event_summary.tex").write_text(
+        tex_event_table(e, CFG["events"])
+    )
 
     # heatmap global
     heatmap_median_lead(
