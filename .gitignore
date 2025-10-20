@@ -2,3 +2,5 @@
 **/__pycache__/
 data/stations.json
 .vscode/
+.ruff_cache
+*.log
