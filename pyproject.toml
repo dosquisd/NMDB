@@ -18,3 +18,13 @@ dependencies = [
     "seaborn>=0.13.2",
     "statsmodels>=0.14.5",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.1",
+]
+
+[tool.ruff]
+line-length = 80
+target-version = "py312"
+lint.extend-select = ["I"]
