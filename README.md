@@ -1,5 +1,8 @@
 # NMDB — Analysis of NMDB neutron monitor events
 
+> [!NOTE]
+> There is another approach using graphs in this repo: [dosquisd/NMDB-FD-PredictorWithGraphs](https://github.com/dosquisd/NMDB-FD-PredictorWithGraphs)
+
 This repository contains code and notebooks used to analyse neutron monitor data from the NMDB (Neutron Monitor Database). The code in `utils/` implements data loading, metric calculations and plotting helpers. The notebooks run the analysis pipeline (data loading -> sliding-window metrics -> visualization) for a few cosmic-ray events of interest.
 
 Most examples and the provided data focus on Forbush Decrease events (see `./data/ForbushDecrease`).
